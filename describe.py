@@ -1,5 +1,6 @@
 import pandas as pd
 import sys
+import math
 
 
 def get_all_columns(data):
@@ -10,6 +11,20 @@ def get_all_columns(data):
 		if data[col].dtype == float:
 			data_col.append(col)
 	return data_col
+
+
+def compute_std(data, mean, n):
+	"""compute std of data"""
+	std = 0
+	sum = 0
+	for elem in data:
+		if elem == elem:
+			tmp = (elem - mean)
+			sum = sum + tmp ** 2
+	if n == 0: raise AssertionError("Cannot have only 1 data to compute std")
+	std = math.sqrt((sum) / (n - 1))
+	# print(f"std={std}, stdPD={data.std()}")
+	return std
 
 
 def get_info_col(info, data, col):
@@ -27,7 +42,8 @@ def get_info_col(info, data, col):
 			if elem < min:
 				min = elem
 	mean = sum / nb
-	print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}")
+	std = compute_std(data[col], mean, nb)
+	print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}, std={std}")
 
 	return info
 
