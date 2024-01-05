@@ -27,6 +27,63 @@ def compute_std(data, mean, n):
 	return std
 
 
+def compute_sub_quartile(data, p, t):
+	"""return the value representing the quartile"""
+	if t == 0.25:
+		v = (data[math.trunc(p)] * 3 + data[math.trunc(p) + 1] * 1) / (4)
+	elif t == 0.50:
+		v = (data[math.trunc(p)] + data[math.trunc(p) + 1]) / (2)
+	elif t == 0.75:
+		v = (data[math.trunc(p)] * 1 + data[math.trunc(p) + 1] * 3) / (4)
+	elif t == 0:
+		v = data[math.trunc(p)]
+	print(f"data[{math.trunc(p)}]={data[math.trunc(p)]} - data[{math.trunc(p) + 1}]={data[math.trunc(p) + 1]}")
+	return v
+
+def compute_quartiles(data, n):
+	"""compute quartiles of data"""
+	quartile = []
+	# print(data)
+	sorted_data = data.copy()
+	sorted_data.sort_values(ascending=True, inplace=True)
+	sorted_list = sorted_data.tolist()
+	# print(sorted_list)
+	# if (n == 15516516156):
+		# print(f"here error ?: n={n}")
+		# # first quartile (25)
+		# p = (n + 3) / 4
+		# print(f"p={p}")
+		# quartile.append(sorted_list[p])
+		# # 2nd quartile (50) 
+		# p = (2 * n) / 4
+		# quartile.append(sorted_list[p])
+		# # 3rd quartile (75)
+		# p = (3 * n + 1) / 4
+		# quartile.append(sorted_list[p])
+	# else:
+		# first quartile (25)
+	p = (n + 3) / 4
+	t = p - math.trunc(p)
+	# print(f"1 n={n} => p={p} t={t}")
+	v = compute_sub_quartile(sorted_list, p, t)
+	quartile.append(v)
+	
+	# 2nd quartile (50) 
+	p = (n + 1) / 2
+	t = p - math.trunc(p)
+	# print(f"2 n={n} => p={p} t={t}")
+	v = compute_sub_quartile(sorted_list, p, t)
+	quartile.append(v)
+
+	# 3rd quartile (75)
+	p = (3 * n + 1) / 4
+	t = p - math.trunc(p)
+	# print(f"3 n={n} => p={p} t={t}")
+	v = compute_sub_quartile(sorted_list, p, t)
+	quartile.append(v)
+	return quartile
+
+
 def get_info_col(info, data, col):
 	"""get info for the column"""
 	nb = 0
@@ -43,7 +100,8 @@ def get_info_col(info, data, col):
 				min = elem
 	mean = sum / nb
 	std = compute_std(data[col], mean, nb)
-	print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}, std={std}")
+	quartile = compute_quartiles(data[col], nb)
+	print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}, std={std}, quartiles={quartile}")
 
 	return info
 
@@ -61,6 +119,7 @@ def main():
 		info = []
 		for elem in col:
 			info = get_info_col(info, datas, elem)
+			break
 	except AssertionError as error:
 		print(f"{AssertionError.__name__}: {error}")
 	except FileNotFoundError as error:
