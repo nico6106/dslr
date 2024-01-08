@@ -37,7 +37,7 @@ def compute_sub_quartile(data, p, t):
 		v = (data[math.trunc(p)] * 1 + data[math.trunc(p) + 1] * 3) / (4)
 	elif t == 0:
 		v = data[math.trunc(p)]
-	print(f"data[{math.trunc(p)}]={data[math.trunc(p)]} - data[{math.trunc(p) + 1}]={data[math.trunc(p) + 1]}")
+	# print(f"data[{math.trunc(p)}]={data[math.trunc(p)]} - data[{math.trunc(p) + 1}]={data[math.trunc(p) + 1]}")
 	return v
 
 def compute_quartiles(data, n):
@@ -47,40 +47,26 @@ def compute_quartiles(data, n):
 	sorted_data = data.copy()
 	sorted_data.sort_values(ascending=True, inplace=True)
 	sorted_list = sorted_data.tolist()
-	# print(sorted_list)
-	# if (n == 15516516156):
-		# print(f"here error ?: n={n}")
-		# # first quartile (25)
-		# p = (n + 3) / 4
-		# print(f"p={p}")
-		# quartile.append(sorted_list[p])
-		# # 2nd quartile (50) 
-		# p = (2 * n) / 4
-		# quartile.append(sorted_list[p])
-		# # 3rd quartile (75)
-		# p = (3 * n + 1) / 4
-		# quartile.append(sorted_list[p])
-	# else:
-		# first quartile (25)
 	p = (n + 3) / 4
 	t = p - math.trunc(p)
 	# print(f"1 n={n} => p={p} t={t}")
-	v = compute_sub_quartile(sorted_list, p, t)
+	v = compute_sub_quartile(sorted_list, math.trunc(p) -1, t)
 	quartile.append(v)
 	
 	# 2nd quartile (50) 
 	p = (n + 1) / 2
 	t = p - math.trunc(p)
 	# print(f"2 n={n} => p={p} t={t}")
-	v = compute_sub_quartile(sorted_list, p, t)
+	v = compute_sub_quartile(sorted_list, math.trunc(p) -1, t)
 	quartile.append(v)
 
 	# 3rd quartile (75)
 	p = (3 * n + 1) / 4
 	t = p - math.trunc(p)
 	# print(f"3 n={n} => p={p} t={t}")
-	v = compute_sub_quartile(sorted_list, p, t)
+	v = compute_sub_quartile(sorted_list, math.trunc(p) -1, t)
 	quartile.append(v)
+
 	return quartile
 
 
@@ -101,7 +87,8 @@ def get_info_col(info, data, col):
 	mean = sum / nb
 	std = compute_std(data[col], mean, nb)
 	quartile = compute_quartiles(data[col], nb)
-	print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}, std={std}, quartiles={quartile}")
+	# print(f"{col}: nb={nb}, mean={mean}, min={min} max={max}, std={std}, quartiles={quartile}")
+	info = [nb, mean, std, min, quartile[0], quartile[1], quartile[2], max]
 
 	return info
 
@@ -111,15 +98,22 @@ def main():
 		if len(sys.argv) != 2:
 			raise AssertionError("Wrong number of arguments")
 		filename = sys.argv[1]
-		print(f"args= {filename}")
+		# print(f"args= {filename}")
 		datas = pd.read_csv(filename)
-		print(datas)
+		# print(datas)
 		col = get_all_columns(datas)
-		print(col)
-		info = []
+		# print(col)
+		info = {'': ['Count', 'Mean', 'Std', 'Min', '25%', '50%', '75%', 'Max']}
+		info = pd.DataFrame(info)
 		for elem in col:
-			info = get_info_col(info, datas, elem)
-			break
+			tmp = get_info_col('', datas, elem)
+			info[elem] = tmp
+			# break
+		# info.set_index('', inplace=True)
+
+		# print(f"{info}")
+		print(info.to_string(index=False))
+
 	except AssertionError as error:
 		print(f"{AssertionError.__name__}: {error}")
 	except FileNotFoundError as error:
