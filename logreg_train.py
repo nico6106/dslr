@@ -2,6 +2,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import sys
 import numpy as np
+from tqdm import tqdm
+from time import time
+from typing import Any
+
+
+def time_decorator(func):
+    """compute performance in s"""
+    def inner(*args: Any, **kwds: Any):
+        """inner function of perf function"""
+        """eliminate args"""
+        init = time()
+        result = func(*args)
+        end = time()
+        total = end - init
+        print(f"==>Function {func.__name__} took : {total}s")
+        return result
+    return inner
+
 
 def get_col(data):
 	a = np.array(data)
@@ -32,22 +50,24 @@ def get_datas(data, columns):
 	# print(houses_students)
 	y = np.array(houses_students)
 	y = y.reshape(y.shape[0], 1)
-	print(f"shape y = {y.shape}")
-	print(y)
+	# print(f"shape y = {y.shape}")
+	# print(y)
 
 	# get x
 	a = get_col(data[columns[0]])
 	b = get_col(data[columns[1]])
-	c = get_col(data[columns[2]])
+	# c = get_col(data[columns[2]])
 	
-	x = np.hstack((a, b, c, np.ones((a.shape[0], 1))))
-	print(f"shape x = {x.shape}")
-	print(x)
+	x = np.hstack((a, b, np.ones((a.shape[0], 1))))
+	# print(f"shape x = {x.shape}")
+	# print(x)
 
 	# initialise thetas avec des valeurs randoms
-	thetas_init = np.random.randn(4, 1)
-	print(f"shape thetas_init = {thetas_init.shape}")
-	print(thetas_init)
+	# thetas_init = np.random.randn(4, 1)
+	thetas_init = np.array([0, 0, 0])
+	thetas_init = thetas_init.reshape(thetas_init.shape[0], 1)
+	# print(f"shape thetas_init = {thetas_init.shape}")
+	# print(thetas_init)
 	return x, y, thetas_init
 
 
@@ -68,11 +88,17 @@ def grad(X, y, theta):
 	return 1 / m * X.T.dot(model(X, theta) - y)
 
 
+# @time_decorator
 def gradient_descent(X, y, theta, learning_rate, n_iterations):
 	"""calcule la descente de gradient"""
-	for i in range(0, n_iterations):
+	cost_history = np.zeros(n_iterations)
+
+	for i in tqdm(range(0, n_iterations)):
 		theta = theta - learning_rate * grad(X, y, theta)
-	return theta
+		cost_history[i] = cost_function(X, y, theta) 
+		# if (i % 500 == 0):
+		# 	print(f"here {i} : theta={theta}")
+	return theta, cost_history
 
 
 def train_all(data, columns):
@@ -95,6 +121,7 @@ def thetas_reel(x, thetas):
 	return thetas
 
 
+@time_decorator
 def main():
 	"""main function of the program"""
 	try:
@@ -102,14 +129,74 @@ def main():
 			raise AssertionError("Wrong number of arguments")
 		filename = sys.argv[1]
 		datas = pd.read_csv(filename)
-		selected_colums = ['Astronomy', 'Ancient Runes', 'Herbology']
+		selected_colums = ['Astronomy', 'Ancient Runes'] #Herbology
 		x, y, theta = get_datas(datas, selected_colums)
-		theta_final = gradient_descent(x, y, theta, 0.01, 1000)
-		print(f"shape theta_final = {theta_final.shape}")
+		theta_final = np.array([])
+		print(x)
+		y_tmp = y.flatten()
+
+		y_show = np.array([])
+		cost_history = np.array([])
+		# print(y_tmp)
+
+		
+		# theta_final = theta_final.reshape(4, 4)
+
+		nb_iter = 4000
+
+		for i in range(0, 4):
+			y_train = np.where(y == i, 1, 0)
+			# print(y_train)
+			theta_train, cost_tmp = gradient_descent(x, y_train, theta, 0.01, nb_iter)
+			# print(theta_train)
+			theta_train = theta_train.T
+			cost_tmp = cost_tmp.reshape(cost_tmp.shape[0], 1)
+			# cost_tmp = cost_tmp.T
+			# print(cost_history)
+			# print(f"shape cost_tmp = {cost_tmp.shape}")
+			# print(theta_train)
+			
+			if theta_final.size == 0:
+				theta_final = theta_train
+				y_show = y_train
+				cost_history = cost_tmp
+			else:
+				theta_final = np.vstack([theta_final, theta_train])
+				y_show = np.hstack([y_show, y_train])
+				cost_history = np.hstack([cost_history, cost_tmp])
+			# print(f"shape theta_final = {theta_final.shape}")
+			# print(theta_final)
+		# print(f"shape theta_final = {theta_final.shape}")
 		print(theta_final)
+
+		fig, axes = plt.subplots(nrows=4, ncols=2)
+		# print(y_show)
+		row = 0
+		axes[0,0].scatter(x[:,0], x[:,1], c=y_show[:,row])
+		axes[0,0].plot([x / 1000 for x in range(0,1000)], [theta_final[row][0] * ((x/1000)*(x/1000)) + theta_final[row][1] * x/1000 + theta_final[row][2] for x in range(0,1000)])
+
+		row = 1
+		axes[0,1].scatter(x[:,0], x[:,1], c=y_show[:,row])
+		axes[0,1].plot([x / 1000 for x in range(0,1000)], [theta_final[row][0] * ((x/1000)*(x/1000)) + theta_final[row][1] * x/1000 + theta_final[row][2] for x in range(0,1000)])
+
+		row = 2
+		axes[1,0].scatter(x[:,0], x[:,1], c=y_show[:,row])
+		axes[1,0].plot([x / 1000 for x in range(0,1000)], [theta_final[row][0] * ((x/1000)*(x/1000)) + theta_final[row][1] * x/1000 + theta_final[row][2] for x in range(0,1000)])
+
+		row = 3
+		axes[1,1].scatter(x[:,0], x[:,1], c=y_show[:,row])
+		axes[1,1].plot([x / 1000 for x in range(0,1000)], [theta_final[row][0] * ((x/1000)*(x/1000)) + theta_final[row][1] * x/1000 + theta_final[row][2] for x in range(0,1000)])
+
+		print(f"cost history: shape={cost_history.shape}")
+		axes[2,0].plot(list(range(0,nb_iter)), cost_history[:,0])
+		axes[2,1].plot(list(range(0,nb_iter)), cost_history[:,1])
+		axes[3,0].plot(list(range(0,nb_iter)), cost_history[:,2])
+		axes[3,1].plot(list(range(0,nb_iter)), cost_history[:,3])
+		plt.show()
 		
 		# retour aux valeurs sans standardisation
 		theta_final = thetas_reel(x, theta_final)
+		print(f"real thetas")
 		print(theta_final)
 		
 	except AssertionError as error:
